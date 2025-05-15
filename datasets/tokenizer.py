@@ -1,4 +1,5 @@
 import json
+import torch
 
 
 
@@ -28,4 +29,11 @@ class GateTokenizer:
 
     def decode(self, token_list):
         rev_vocab = {v: k for k, v in self.vocab.items()}
+
+        # Convert tensor or int to list
+        if isinstance(token_list, torch.Tensor):
+            token_list = token_list.tolist()
+        elif isinstance(token_list, int):
+            token_list = [token_list]
+
         return [rev_vocab.get(t, "<UNK>") for t in token_list]

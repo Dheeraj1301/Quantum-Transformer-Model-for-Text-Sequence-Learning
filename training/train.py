@@ -16,11 +16,16 @@ def train_model(epochs=10, batch_size=16, lr=1e-4):
     dataset = QuantumCircuitDataset()
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    # Set task type here according to your dataset labels:
     # 'sequence' for one label per sequence, 'token' for one label per token
     task_type = 'sequence'  # or 'token'
 
-    model = TransformerModel(vocab_size=6, task_type=task_type).to(device)
+    model = TransformerModel(
+        vocab_size=6,            # Assuming 6 quantum gates or token types
+        task_type=task_type,
+        num_layers=2,            # ✅ Reduced from 4 to 2
+        dropout=0.2              # ✅ Increased dropout for better generalization
+    ).to(device)
+
     loss_fn = get_loss_function()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
@@ -45,21 +50,21 @@ def train_model(epochs=10, batch_size=16, lr=1e-4):
             output = model(x)
             inference_end = time.time()
 
-            # Adjust output and labels according to task_type
+            # Handle token vs sequence tasks
             if task_type == 'token':
-                # output shape: (B, S, num_classes)
-                # labels shape: (B, S)
                 output = output.view(-1, output.size(-1))  # (B*S, num_classes)
-                y = y.view(-1)                            # (B*S,)
+                y = y.view(-1)                             # (B*S,)
             elif task_type == 'sequence':
-                # output shape: (B, num_classes)
-                # labels shape: (B,)
                 pass
             else:
                 raise ValueError(f"Unknown task_type: {task_type}")
 
             loss = loss_fn(output, y)
             loss.backward()
+
+            # ✅ Gradient Clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
             optimizer.step()
 
             # Metrics
@@ -96,6 +101,7 @@ def train_model(epochs=10, batch_size=16, lr=1e-4):
         writer.add_scalar("Epoch/GateDepth", avg_gate_depth, epoch)
         writer.add_scalar("Epoch/InferenceTime", avg_inference_time, epoch)
 
+    # Save model
     torch.save(model.state_dict(), "checkpoints/tqco_model.pt")
     writer.close()
     print("\n✅ Training complete. Model saved.\n")

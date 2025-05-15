@@ -1,9 +1,9 @@
 import torch
-from model.transformer_model import TransformerCircuitOptimizer
+from model.transformer_model import  TransformerModel
 from datasets.tokenizer import GateTokenizer
 
 def evaluate_model(model_path="checkpoints/tqco_model.pt"):
-    model = TransformerCircuitOptimizer(vocab_size=6)
+    model =  TransformerModel(vocab_size=6)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
@@ -15,9 +15,13 @@ def evaluate_model(model_path="checkpoints/tqco_model.pt"):
         output = model(input_tensor)
         predicted_tokens = torch.argmax(output, dim=-1).squeeze().tolist()
 
-    decoded = tokenizer.decode(predicted_tokens)
-    print("Input tokens: ", tokenizer.decode(input_sequence))
-    print("Predicted: ", decoded)
+    
 
+# after
+    if isinstance(predicted_tokens, int):
+        predicted_tokens = [predicted_tokens]
+    decoded = tokenizer.decode(predicted_tokens)
+    print("Predicted:", predicted_tokens)
+    print("Decoded:", decoded)
 if __name__ == '__main__':
     evaluate_model()

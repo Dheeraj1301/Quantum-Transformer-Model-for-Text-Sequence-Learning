@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class TransformerModel(nn.Module):
-    def __init__(self, vocab_size, d_model=128, nhead=8, num_layers=4, dim_feedforward=512, dropout=0.1, num_classes=6, task_type='sequence'):
+    def __init__(self, vocab_size, d_model=128, nhead=8, num_layers=2, dim_feedforward=512, dropout=0.2, num_classes=6, task_type='sequence'):
         """
         Args:
             vocab_size (int): Size of the tokenizer vocabulary.
@@ -25,9 +25,13 @@ class TransformerModel(nn.Module):
             nhead=nhead,
             dim_feedforward=dim_feedforward,
             dropout=dropout,
-            batch_first=True
+            batch_first=True,
+            norm_first=True  # ✅ Use pre-norm architecture (LayerNorm before attention/FFN)
         )
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+
+        self.norm = nn.LayerNorm(d_model)  # ✅ Final LayerNorm
+        self.dropout = nn.Dropout(dropout)
 
         if task_type == 'token':
             self.classifier = nn.Linear(d_model, num_classes)
@@ -43,23 +47,24 @@ class TransformerModel(nn.Module):
             x: Tensor of shape (batch_size, seq_length)
             attention_mask: Optional mask (batch_size, seq_length)
         """
-        x = self.embedding(x)                           # (B, S, D)
-        x = self.positional_encoding(x)                # (B, S, D)
-        x = self.transformer_encoder(x)                # (B, S, D)
+        x = self.embedding(x)                            # (B, S, D)
+        x = self.positional_encoding(x)                 # (B, S, D)
+        x = self.transformer_encoder(x)                 # (B, S, D)
+        x = self.norm(x)                                # ✅ Final LayerNorm
+        x = self.dropout(x)                             # ✅ Final dropout
 
         if self.task_type == 'token':
-            return self.classifier(x)                  # (B, S, num_classes)
+            return self.classifier(x)                   # (B, S, num_classes)
         else:  # sequence classification
             pooled = self.pool(x.transpose(1, 2)).squeeze(-1)  # (B, D)
-            return self.classifier(pooled)             # (B, num_classes)
+            return self.classifier(pooled)              # (B, num_classes)
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, dropout=0.1, max_len=512):
+    def __init__(self, d_model, dropout=0.2, max_len=512):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
-        # Compute positional encodings
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len).unsqueeze(1).float()
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-torch.log(torch.tensor(10000.0)) / d_model))
