@@ -1,19 +1,30 @@
 import json
 
+
+
 class GateTokenizer:
+    
     def __init__(self):
         self.vocab = {
             "X": 0, "Y": 1, "Z": 2, "H": 3, "CNOT": 4, "<PAD>": 5
         }
 
-    def encode(self, circuit_json):
-        data = json.loads(circuit_json)
+    def encode(self, data):
+        circuit_data = data.get("moments") or [[gate] for gate in data.get("circuit", [])]
+
         tokens = []
-        for moment in data['moments']:
-            for op in moment['operations']:
-                gate = op['gate']['cirq_type']
-                tokens.append(self.vocab.get(gate, self.vocab['<PAD>']))
+        for moment in circuit_data:
+            for op in moment:
+                if isinstance(op, dict):  # Old format
+                    gate = op.get("gate", {}).get("cirq_type", "")
+                elif isinstance(op, list):  # Simple format
+                    gate = op[0]
+                else:
+                    gate = "UNK"
+
+                tokens.append(self.vocab.get(gate, 0))
         return tokens
+
 
     def decode(self, token_list):
         rev_vocab = {v: k for k, v in self.vocab.items()}
