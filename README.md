@@ -102,7 +102,7 @@ tensorboard --logdir=runs
 ✅ Visualize results in Streamlit:
 ```bash
 
-streamlit run quantum_dashboard.py
+streamlit run dashboard/streamlit_app.py
 ```
 ### This dashboard displays:
 
@@ -179,7 +179,6 @@ Streamlit not launching	Run pip install streamlit or downgrade to streamlit==1.2
 Accuracy remains low	Check dataset quality, try token-level supervision
 
 
-
 📄 License
 MIT License © 2025 Quantum AI Optimizer Team
 
@@ -192,6 +191,6 @@ If you use this work for research, please cite:
   title={Quantum Transformer Circuit Optimizer},
   author={Your Name},
   year={2025},
-  howpublished={\url{https://github.com/your-repo-url}},
+  howpublished={\url{https://github.com/Dheeraj1301/Quantum-Transformer-Model-for-Text-Sequence-Learning}},
 }
 ```
