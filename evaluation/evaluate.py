@@ -23,5 +23,6 @@ def evaluate_model(model_path="checkpoints/tqco_model.pt"):
     decoded = tokenizer.decode(predicted_tokens)
     print("Predicted:", predicted_tokens)
     print("Decoded:", decoded)
+    return predicted_tokens, decoded
 if __name__ == '__main__':
     evaluate_model()
